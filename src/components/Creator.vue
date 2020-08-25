@@ -3,14 +3,11 @@
     <div id="workspace-container">
       <div id="canvas"></div>
       <div id="page">
-        <svg version="1.1"
-             baseProfile="full"
+        <svg baseProfile="full"
              style="position: absolute; top: 13px; left: 13px;"
              :width="width" :height="height"
              xmlns="http://www.w3.org/2000/svg">
-          <template v-for="e in elements">
-            <component :is="e.component()" :element="e" :key="e.id()"></component>
-          </template>
+        <component v-for="e in elements" :is="e.component()" :element="e" :key="e.id()"></component>
         </svg>
       </div>
     </div>
