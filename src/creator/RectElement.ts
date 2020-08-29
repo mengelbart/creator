@@ -1,8 +1,8 @@
 import AbstractElement from '@/creator/AbstractElement';
 import AffineTransform from '@/creator/AffineTransform';
 
-export default class LineElement extends AbstractElement {
-  static component = 'LineElementComponent';
+export default class RectElement extends AbstractElement {
+  static component = 'RectElementComponent';
 
   constructor(
     id: string,
@@ -12,6 +12,6 @@ export default class LineElement extends AbstractElement {
     stroke?: string,
     fill?: string,
   ) {
-    super(id, LineElement.component, width, height, transform, stroke, fill);
+    super(id, RectElement.component, width, height, transform, stroke, fill);
   }
 }

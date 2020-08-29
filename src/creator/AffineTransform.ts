@@ -12,12 +12,12 @@ export default class AffineTransform {
   translateY: number;
 
   constructor(
-    scaleX: number,
-    scaleY: number,
-    shearX: number,
-    shearY: number,
-    translateX: number,
-    translateY: number,
+    scaleX = 1,
+    scaleY = 0,
+    shearX = 0,
+    shearY = 1,
+    translateX = 0,
+    translateY = 0,
   ) {
     this.scaleX = scaleX;
     this.scaleY = scaleY;

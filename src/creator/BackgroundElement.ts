@@ -1,7 +1,7 @@
-import Element from '@/creator/Element';
+import AbstractElement from '@/creator/AbstractElement';
 import AffineTransform from '@/creator/AffineTransform';
 
-export default class BackgroundElement extends Element {
+export default class BackgroundElement extends AbstractElement {
   static component = 'BackgroundElementComponent';
 
   x: number;
