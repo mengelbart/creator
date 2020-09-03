@@ -1,3 +1,5 @@
+import Point from '@/creator/Point';
+
 export default class AffineTransform {
   scaleX: number;
 
@@ -13,21 +15,28 @@ export default class AffineTransform {
 
   constructor(
     scaleX = 1,
-    scaleY = 0,
     shearX = 0,
-    shearY = 1,
     translateX = 0,
+    scaleY = 1,
+    shearY = 0,
     translateY = 0,
   ) {
     this.scaleX = scaleX;
-    this.scaleY = scaleY;
     this.shearX = shearX;
-    this.shearY = shearY;
     this.translateX = translateX;
+    this.scaleY = scaleY;
+    this.shearY = shearY;
     this.translateY = translateY;
   }
 
   get string(): string {
-    return `matrix(${this.scaleX} ${this.scaleY} ${this.shearX} ${this.shearY} ${this.translateX} ${this.translateY})`;
+    return `matrix(${this.scaleX} ${this.shearY} ${this.shearX} ${this.scaleY} ${this.translateX} ${this.translateY})`;
+  }
+
+  applyToPoint(point: Point): Point {
+    return new Point({
+      x: this.scaleX * point.x + this.shearX * point.y + this.translateX,
+      y: this.scaleY * point.y + this.shearY * point.x + this.translateY,
+    });
   }
 }
