@@ -1,17 +1,17 @@
 import AbstractElement from '@/creator/AbstractElement';
-import AffineTransform from '@/creator/AffineTransform';
 
 export default class LineElement extends AbstractElement {
   static component = 'LineElementComponent';
 
+  static editingComponent = 'LineElementEditingComponent';
+
   constructor(
-    id: string,
-    width: number,
-    height: number,
-    transform: AffineTransform,
-    stroke?: string,
-    fill?: string,
+    data: Partial<LineElement>,
   ) {
-    super(id, LineElement.component, width, height, transform, stroke, fill);
+    super({
+      component: LineElement.component,
+      editingComponent: LineElement.editingComponent,
+      ...data,
+    });
   }
 }

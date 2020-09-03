@@ -1,12 +1,12 @@
 <template>
   <div>
-    <div id="workspace-container">
-      <div id="canvas"></div>
+    <div id="workspace-container" :style="style">
+      <div id="canvas"
+      ></div>
       <div id="page">
         <svg ref="svg"
              baseProfile="full"
-             style="position: absolute; top: 13px; left: 13px;"
-             :width="width" :height="height"
+             :width="width * zoom" :height="height * zoom"
              xmlns="http://www.w3.org/2000/svg"
         >
         <component v-for="e in elements"
@@ -17,6 +17,20 @@
                    @mousedown="onElementDrag"
                    @mouseup="onElementDrop"
         ></component>
+        </svg>
+      </div>
+      <div>
+        <svg id="editor"
+             ref="editingSVG"
+             baseProfile="full"
+             :width="width * zoom" :height="height * zoom"
+             xmlns="http://www.w3.org/2000/svg"
+             pointer-events="none"
+        >
+          <component v-if="isEditingElement"
+                     :is="editingElement.editingComponent"
+                     :element="editingElement"
+          ></component>
         </svg>
       </div>
     </div>
@@ -35,76 +49,97 @@ import LineElementComponent from '@/components/LineElementComponent.vue';
 import RectElement from '@/creator/RectElement';
 import RectElementComponent from '@/components/RectElementComponent.vue';
 import { Ref } from 'vue-property-decorator';
+import RectElementEditingComponent from '@/components/RectElementEditingComponent.vue';
+import LineElementEditingComponent from '@/components/LineElementEditingComponent.vue';
+import BackgroundElementEditingComponent from '@/components/BackgroundElementEditingComponent.vue';
 
 @Component({
   components: {
     BackgroundElementComponent,
+    BackgroundElementEditingComponent,
     LineElementComponent,
+    LineElementEditingComponent,
     RectElementComponent,
+    RectElementEditingComponent,
   },
 })
 export default class Creator extends Vue {
   @Ref('svg') readonly svg!: HTMLElement;
 
-  width = 500;
+  zoom = 1;
 
-  height = 500;
+  width = 2570;
 
-  draggingElement: AbstractElement | undefined;
+  height = 3742;
+
+  draggingElement: AbstractElement | null = null;
 
   dragOffsetX = 0;
 
   dragOffsetY = 0;
 
+  isEditingElement = false;
+
+  editingElement: AbstractElement | null = null;
+
   elements: AbstractElement[] = [
-    new BackgroundElement(
-      'id',
-      0,
-      0,
-      this.width,
-      this.height,
-      new AffineTransform(),
-      '#000',
-    ),
-    new LineElement(
-      'lineId',
-      200,
-      200,
-      new AffineTransform(),
-      'white',
-    ),
-    new RectElement(
-      'rectId1',
-      200,
-      200,
-      new AffineTransform(1, 0, 0, 1, 200, 200),
-      'yellow',
-    ),
-    new RectElement(
-      'rectId2',
-      200,
-      200,
-      new AffineTransform(1, 0, 0, 1, 200, 200),
-      'yellow',
-    ),
-    new RectElement(
-      'rectId3',
-      200,
-      200,
-      new AffineTransform(1, 0, 0, 1, 200, 200),
-      'yellow',
-    ),
+    new BackgroundElement({
+      id: 'background',
+      width: this.width,
+      height: this.height,
+      transform: new AffineTransform(),
+      fill: '#fff',
+    }),
+    new LineElement({
+      id: 'lineId',
+      width: 200,
+      height: 200,
+      transform: new AffineTransform(),
+      stroke: 'red',
+    }),
+    new RectElement({
+      id: 'rectId1',
+      width: 200,
+      height: 200,
+      transform: new AffineTransform(1, 0, 0, 1, 200, 200),
+      stroke: 'black',
+    }),
+    new RectElement({
+      id: 'rectId2',
+      width: 200,
+      height: 200,
+      transform: new AffineTransform(1, 0, 0, 1, 200, 200),
+      stroke: 'blue',
+    }),
+    new RectElement({
+      id: 'rectId3',
+      width: 200,
+      height: 200,
+      transform: new AffineTransform(1, 0, 0, 1, 200, 200),
+      stroke: 'green',
+      fill: '',
+      fillOpacity: 0,
+    }),
   ];
 
+  get style(): string {
+    return `position: relative; margin: 20px; width: ${this.width * this.zoom}px; height: ${this.height * this.zoom}px;`;
+  }
+
   onElementClick(event: Event, elementId: string): void {
-    console.log(this.elements.find((e: AbstractElement) => e.id === elementId));
-    console.log(event);
+    if (elementId !== 'background') {
+      this.isEditingElement = true;
+      this.editingElement = this.elements.find((e) => e.id === elementId) || null;
+    } else {
+      this.isEditingElement = false;
+      this.editingElement = null;
+    }
   }
 
   onElementDrag({ offsetX, offsetY }: MouseEvent, elementId: string): void {
     this.svg.addEventListener('mousemove', this.onMouseMove);
 
-    this.draggingElement = this.elements.find((e) => e.id === elementId);
+    this.draggingElement = this.elements.find((e) => e.id === elementId) || null;
     if (this.draggingElement) {
       this.dragOffsetX = offsetX - this.draggingElement.transform.translateX;
       this.dragOffsetY = offsetY - this.draggingElement.transform.translateY;
@@ -113,8 +148,7 @@ export default class Creator extends Vue {
 
   onElementDrop(): void {
     this.svg.removeEventListener('mousemove', this.onMouseMove);
-
-    this.draggingElement = undefined;
+    this.draggingElement = null;
     this.dragOffsetX = 0;
     this.dragOffsetY = 0;
   }
@@ -128,3 +162,32 @@ export default class Creator extends Vue {
   }
 }
 </script>
+
+<style>
+#canvas {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  border: 1px solid #ccc;
+}
+
+#page{
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 1px;
+}
+
+#editor{
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 1px;
+}
+</style>

@@ -1,35 +1,25 @@
 import AffineTransform from '@/creator/AffineTransform';
 
 export default abstract class AbstractElement {
-  id: string;
+  id = '';
 
-  component: string;
+  component = ''; // TODO: Default components?
 
-  width: number;
+  editingComponent = ''; // TODO: Default components?
 
-  height: number;
+  width = 0;
 
-  transform: AffineTransform;
+  height = 0;
 
-  fill: string;
+  transform = new AffineTransform();
 
-  stroke: string;
+  stroke = '';
 
-  protected constructor(
-    id: string,
-    component: string,
-    width: number,
-    height: number,
-    transform: AffineTransform,
-    stroke?: string,
-    fill?: string,
-  ) {
-    this.id = id;
-    this.component = component;
-    this.width = width;
-    this.height = height;
-    this.transform = transform;
-    this.stroke = stroke || '';
-    this.fill = fill || '';
+  fill = '';
+
+  fillOpacity = 0;
+
+  protected constructor(data: Partial<AbstractElement> = {}) {
+    Object.assign(this, data);
   }
 }

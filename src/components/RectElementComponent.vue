@@ -5,6 +5,7 @@
           :transform="element.transform.string"
           :stroke="element.stroke"
           :fill="element.fill"
+          :fill-opacity="element.fillOpacity"
           @click="$emit('click', $event, element.id)"
           @mousedown="$emit('mousedown', $event, element.id)"
           @mouseup="$emit('mouseup', $event, element.id)"
@@ -18,10 +19,6 @@ import { Component, Prop, Vue } from 'vue-property-decorator';
 
 @Component
 export default class RectElementComponent extends Vue {
-  @Prop(RectElement) element: RectElement | undefined;
+  @Prop(RectElement) element!: RectElement;
 }
 </script>
-
-<style scoped>
-
-</style>

@@ -1,17 +1,17 @@
 import AbstractElement from '@/creator/AbstractElement';
-import AffineTransform from '@/creator/AffineTransform';
 
 export default class RectElement extends AbstractElement {
   static component = 'RectElementComponent';
 
+  static editingComponent = 'RectElementEditingComponent';
+
   constructor(
-    id: string,
-    width: number,
-    height: number,
-    transform: AffineTransform,
-    stroke?: string,
-    fill?: string,
+    data: Partial<RectElement> = {},
   ) {
-    super(id, RectElement.component, width, height, transform, stroke, fill);
+    super({
+      component: RectElement.component,
+      editingComponent: RectElement.editingComponent,
+      ...data,
+    });
   }
 }

@@ -1,6 +1,9 @@
 <template>
   <g>
-    <path :fill="element.fill" :d="element.d"></path>
+    <path :fill="element.fill"
+          :d="element.d"
+          @click="$emit('click', $event, element.id)"
+    ></path>
   </g>
 </template>
 
@@ -12,7 +15,7 @@ import { Prop } from 'vue-property-decorator';
 
 @Component
 export default class BackgroundElementComponent extends Vue {
-  @Prop(BackgroundElement) element: BackgroundElement | undefined;
+  @Prop(BackgroundElement) element!: BackgroundElement;
 }
 </script>
 
