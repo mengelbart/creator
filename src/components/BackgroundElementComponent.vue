@@ -3,6 +3,8 @@
     <path :fill="element.fill"
           :d="element.d"
           @click="$emit('click', $event, element.id)"
+          @mousedown="$emit('mousedown', $event, element.id)"
+          @mouseup="$emit('mouseup', $event, element.id)"
     ></path>
   </g>
 </template>

@@ -30,6 +30,9 @@
           <component v-if="isEditingElement"
                      :is="editingElement.editingComponent"
                      :element="editingElement"
+                     @click="onElementClick"
+                     @mousedown="onElementResizeStart"
+                     @mouseup="onElementDrop"
           ></component>
         </svg>
       </div>
@@ -66,6 +69,8 @@ import BackgroundElementEditingComponent from '@/components/BackgroundElementEdi
 export default class Creator extends Vue {
   @Ref('svg') readonly svg!: HTMLElement;
 
+  @Ref('editingSVG') readonly editor!: HTMLElement;
+
   zoom = 1;
 
   width = 2570;
@@ -81,6 +86,12 @@ export default class Creator extends Vue {
   isEditingElement = false;
 
   editingElement: AbstractElement | null = null;
+
+  resizeDirection = '';
+
+  resizeOffsetX = 0;
+
+  resizeOffsetY = 0;
 
   elements: AbstractElement[] = [
     new BackgroundElement({
@@ -151,6 +162,7 @@ export default class Creator extends Vue {
     this.draggingElement = null;
     this.dragOffsetX = 0;
     this.dragOffsetY = 0;
+    this.onElementResizeStop();
   }
 
   onMouseMove({ offsetX, offsetY }: MouseEvent): void {
@@ -159,6 +171,83 @@ export default class Creator extends Vue {
       this.draggingElement.transform.translateX = offsetX - this.dragOffsetX;
       this.draggingElement.transform.translateY = offsetY - this.dragOffsetY;
     }
+  }
+
+  onElementResizeStart(
+    { offsetX, offsetY }: MouseEvent,
+    direction: string, elementId: string,
+  ): void {
+    this.svg.addEventListener('mousemove', this.onMouseResize);
+    this.resizeDirection = direction;
+    this.isEditingElement = true;
+    this.editingElement = this.elements.find((e) => e.id === elementId) || null;
+    if (this.editingElement) {
+      this.resizeOffsetX = offsetX;
+      this.resizeOffsetY = offsetY;
+    }
+  }
+
+  onElementResizeStop(): void {
+    this.svg.removeEventListener('mousemove', this.onMouseResize);
+    this.resizeDirection = '';
+    this.resizeOffsetX = 0;
+    this.resizeOffsetY = 0;
+  }
+
+  onMouseResize({ offsetX, offsetY }: MouseEvent): void {
+    if (!this.editingElement) {
+      return;
+    }
+
+    const deltaX = this.resizeOffsetX - offsetX;
+    const deltaY = this.resizeOffsetY - offsetY;
+
+    switch (this.resizeDirection) {
+      case ('n'):
+        this.editingElement.transform.translateY -= deltaY;
+        this.editingElement.height += deltaY;
+        break;
+
+      case ('ne'):
+        this.editingElement.transform.translateY -= deltaY;
+        this.editingElement.height += deltaY;
+        this.editingElement.width -= deltaX;
+        break;
+
+      case ('e'):
+        this.editingElement.width -= deltaX;
+        break;
+
+      case ('se'):
+        this.editingElement.height -= deltaY;
+        this.editingElement.width -= deltaX;
+        break;
+
+      case ('s'):
+        this.editingElement.height -= deltaY;
+        break;
+
+      case ('sw'):
+        this.editingElement.transform.translateX -= deltaX;
+        this.editingElement.width += deltaX;
+        this.editingElement.height -= deltaY;
+        break;
+
+      case ('w'):
+        this.editingElement.transform.translateX -= deltaX;
+        this.editingElement.width += deltaX;
+        break;
+
+      case ('nw'):
+      default:
+        this.editingElement.transform.translateX -= deltaX;
+        this.editingElement.width += deltaX;
+        this.editingElement.transform.translateY -= deltaY;
+        this.editingElement.height += deltaY;
+    }
+
+    this.resizeOffsetX = offsetX;
+    this.resizeOffsetY = offsetY;
   }
 }
 </script>
