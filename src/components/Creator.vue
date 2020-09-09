@@ -55,6 +55,7 @@ import { Ref } from 'vue-property-decorator';
 import RectElementEditingComponent from '@/components/RectElementEditingComponent.vue';
 import LineElementEditingComponent from '@/components/LineElementEditingComponent.vue';
 import BackgroundElementEditingComponent from '@/components/BackgroundElementEditingComponent.vue';
+import Vector from '@/creator/matrix/Vector';
 
 @Component({
   components: {
@@ -152,8 +153,8 @@ export default class Creator extends Vue {
 
     this.draggingElement = this.elements.find((e) => e.id === elementId) || null;
     if (this.draggingElement) {
-      this.dragOffsetX = offsetX - this.draggingElement.transform.translateX;
-      this.dragOffsetY = offsetY - this.draggingElement.transform.translateY;
+      this.dragOffsetX = offsetX - this.draggingElement.transform.getTranslateX();
+      this.dragOffsetY = offsetY - this.draggingElement.transform.getTranslateY();
     }
   }
 
@@ -168,8 +169,9 @@ export default class Creator extends Vue {
   onMouseMove({ offsetX, offsetY }: MouseEvent): void {
     if (this.draggingElement) {
       // TODO: Use a store action to update transform
-      this.draggingElement.transform.translateX = offsetX - this.dragOffsetX;
-      this.draggingElement.transform.translateY = offsetY - this.dragOffsetY;
+      const deltaX = this.draggingElement.transform.getTranslateX() - (offsetX - this.dragOffsetX);
+      const deltaY = this.draggingElement.transform.getTranslateY() - (offsetY - this.dragOffsetY);
+      this.draggingElement.transform.translate(new Vector([-deltaX, -deltaY]));
     }
   }
 
@@ -204,12 +206,12 @@ export default class Creator extends Vue {
 
     switch (this.resizeDirection) {
       case ('n'):
-        this.editingElement.transform.translateY -= deltaY;
+        this.editingElement.transform.translate(new Vector([0, -deltaY]));
         this.editingElement.height += deltaY;
         break;
 
       case ('ne'):
-        this.editingElement.transform.translateY -= deltaY;
+        this.editingElement.transform.translate(new Vector([0, -deltaY]));
         this.editingElement.height += deltaY;
         this.editingElement.width -= deltaX;
         break;
@@ -228,21 +230,20 @@ export default class Creator extends Vue {
         break;
 
       case ('sw'):
-        this.editingElement.transform.translateX -= deltaX;
+        this.editingElement.transform.translate(new Vector([-deltaX, 0]));
         this.editingElement.width += deltaX;
         this.editingElement.height -= deltaY;
         break;
 
       case ('w'):
-        this.editingElement.transform.translateX -= deltaX;
+        this.editingElement.transform.translate(new Vector([-deltaX, 0]));
         this.editingElement.width += deltaX;
         break;
 
       case ('nw'):
       default:
-        this.editingElement.transform.translateX -= deltaX;
+        this.editingElement.transform.translate(new Vector([-deltaX, -deltaY]));
         this.editingElement.width += deltaX;
-        this.editingElement.transform.translateY -= deltaY;
         this.editingElement.height += deltaY;
     }
 
