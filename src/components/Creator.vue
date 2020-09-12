@@ -33,6 +33,7 @@
                      @click="onElementClick"
                      @mousedown="onElementResizeStart"
                      @mouseup="onElementDrop"
+                     @rotate="rotate"
           ></component>
         </svg>
       </div>
@@ -55,7 +56,6 @@ import { Ref } from 'vue-property-decorator';
 import RectElementEditingComponent from '@/components/RectElementEditingComponent.vue';
 import LineElementEditingComponent from '@/components/LineElementEditingComponent.vue';
 import BackgroundElementEditingComponent from '@/components/BackgroundElementEditingComponent.vue';
-import Vector from '@/creator/matrix/Vector';
 
 @Component({
   components: {
@@ -113,14 +113,21 @@ export default class Creator extends Vue {
       id: 'rectId1',
       width: 200,
       height: 200,
-      transform: new AffineTransform(1, 0, 200, 1, 0, 200),
+      transform: new AffineTransform(
+        Math.sqrt(2) / 2,
+        -Math.sqrt(2) / 2,
+        158,
+        Math.sqrt(2) / 2,
+        Math.sqrt(2) / 2,
+        300,
+      ),
       stroke: 'black',
     }),
     new RectElement({
       id: 'rectId2',
       width: 200,
       height: 200,
-      transform: new AffineTransform(1, 0, 200, 1, 0, 200),
+      transform: new AffineTransform(0.5, 0, 0, 0.5, 0, 0),
       stroke: 'blue',
     }),
     new RectElement({
@@ -136,6 +143,13 @@ export default class Creator extends Vue {
 
   get style(): string {
     return `position: relative; margin: 20px; width: ${this.width * this.zoom}px; height: ${this.height * this.zoom}px;`;
+  }
+
+  rotate(event: Event, elementId: string): void {
+    const e = this.elements.find((el) => el.id === elementId);
+    if (e) {
+      e.rotate(-45);
+    }
   }
 
   onElementClick(event: Event, elementId: string): void {
@@ -171,7 +185,7 @@ export default class Creator extends Vue {
       // TODO: Use a store action to update transform
       const deltaX = this.draggingElement.transform.getTranslateX() - (offsetX - this.dragOffsetX);
       const deltaY = this.draggingElement.transform.getTranslateY() - (offsetY - this.dragOffsetY);
-      this.draggingElement.transform.translate(new Vector([-deltaX, -deltaY]));
+      this.draggingElement.transform.translate(-deltaX, -deltaY);
     }
   }
 
@@ -202,16 +216,24 @@ export default class Creator extends Vue {
     }
 
     const deltaX = this.resizeOffsetX - offsetX;
-    const deltaY = this.resizeOffsetY - offsetY;
+    let deltaY = this.resizeOffsetY - offsetY;
 
     switch (this.resizeDirection) {
       case ('n'):
-        this.editingElement.transform.translate(new Vector([0, -deltaY]));
+        if (this.editingElement.height + deltaY < 0) {
+          this.editingElement.rotate(180);
+          deltaY = -deltaY;
+        }
+        this.editingElement.transform.translate(0, -deltaY);
         this.editingElement.height += deltaY;
         break;
 
       case ('ne'):
-        this.editingElement.transform.translate(new Vector([0, -deltaY]));
+        if (this.editingElement.height + deltaY < 0) {
+          this.editingElement.rotate(180);
+          deltaY = -deltaY;
+        }
+        this.editingElement.transform.translate(0, -deltaY);
         this.editingElement.height += deltaY;
         this.editingElement.width -= deltaX;
         break;
@@ -221,29 +243,45 @@ export default class Creator extends Vue {
         break;
 
       case ('se'):
+        if (this.editingElement.height + deltaY < 0) {
+          this.editingElement.rotate(180);
+          deltaY = -deltaY;
+        }
         this.editingElement.height -= deltaY;
         this.editingElement.width -= deltaX;
         break;
 
       case ('s'):
+        if (this.editingElement.height + deltaY < 0) {
+          this.editingElement.rotate(180);
+          deltaY = -deltaY;
+        }
         this.editingElement.height -= deltaY;
         break;
 
       case ('sw'):
-        this.editingElement.transform.translate(new Vector([-deltaX, 0]));
+        if (this.editingElement.height + deltaY < 0) {
+          this.editingElement.rotate(180);
+          deltaY = -deltaY;
+        }
+        this.editingElement.transform.translate(-deltaX, 0);
         this.editingElement.width += deltaX;
         this.editingElement.height -= deltaY;
         break;
 
       case ('w'):
-        this.editingElement.transform.translate(new Vector([-deltaX, 0]));
+        this.editingElement.transform.translate(-deltaX, 0);
         this.editingElement.width += deltaX;
         break;
 
       case ('nw'):
       default:
-        this.editingElement.transform.translate(new Vector([-deltaX, -deltaY]));
+        if (this.editingElement.height + deltaY < 0) {
+          this.editingElement.rotate(180);
+          deltaY = -deltaY;
+        }
         this.editingElement.width += deltaX;
+        this.editingElement.transform.translate(-deltaX, -deltaY);
         this.editingElement.height += deltaY;
     }
 

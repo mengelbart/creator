@@ -10,6 +10,7 @@
       <path v-for="(p, index) in cornerPaths"
             :key="index"
             :d="p.path"
+            :transform="p.getRotation()"
             fill="#1a73e8"
             fill-opacity="1"
             stroke="#32a852"
@@ -17,7 +18,7 @@
             stroke-opacity="1"
             pointer-events="visiblePainted"
             :style="`cursor: ${p.direction}-resize`"
-            @click="$emit('click', $event, element.id)"
+            @click="$emit('rotate', $event, element.id)"
             @mousedown="$emit('mousedown', $event, p.direction, element.id)"
             @mouseup="$emit('mouseup', $event, element.id)"
       />
@@ -29,7 +30,6 @@
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import RectElement from '@/creator/RectElement';
 import Resizer from '@/creator/Resizer';
-import Point from '@/creator/Point';
 
 @Component
 export default class RectElementEditingComponent extends Vue {
@@ -43,18 +43,15 @@ export default class RectElementEditingComponent extends Vue {
 
   get cornerPaths(): Resizer[] {
     return [
-      { direction: 'n', x: this.element.width / 2, y: 0 },
-      { direction: 'ne', x: this.element.width, y: 0 },
-      { direction: 'e', x: this.element.width, y: this.element.height / 2 },
-      { direction: 'se', x: this.element.width, y: this.element.height },
-      { direction: 's', x: this.element.width / 2, y: this.element.height },
-      { direction: 'sw', x: 0, y: this.element.height },
-      { direction: 'w', x: 0, y: this.element.height / 2 },
-      { direction: 'nw', x: 0, y: 0 },
-    ].map((p) => {
-      const pp = this.element.transform.applyToPoint(p);
-      return new Resizer(p.direction, 0, new Point(pp));
-    });
+      { direction: 'n', point: this.element.getResizePoint('n') },
+      { direction: 'ne', point: this.element.getResizePoint('ne') },
+      { direction: 'e', point: this.element.getResizePoint('e') },
+      { direction: 'se', point: this.element.getResizePoint('se') },
+      { direction: 's', point: this.element.getResizePoint('s') },
+      { direction: 'sw', point: this.element.getResizePoint('sw') },
+      { direction: 'w', point: this.element.getResizePoint('w') },
+      { direction: 'nw', point: this.element.getResizePoint('nw') },
+    ].map((p) => new Resizer(p.direction, this.element.transform.getRotationDegree(), p.point));
   }
 }
 </script>

@@ -61,9 +61,9 @@ export default class Basic2DMatrix extends Matrix {
   }
 
   getRow(i: number): Vector {
-    const result = Vector.zero(this.rows());
+    const result = Vector.zero(this.columns());
 
-    for (let j = 0; i < this.columns(); j += 1) {
+    for (let j = 0; j < this.columns(); j += 1) {
       result.set(j, this.getCell(i, j));
     }
 
@@ -71,7 +71,7 @@ export default class Basic2DMatrix extends Matrix {
   }
 
   getColumn(j: number) {
-    const result = Vector.zero(this.columns());
+    const result = Vector.zero(this.rows());
 
     for (let i = 0; i < this.rows(); i += 1) {
       result.set(i, this.getCell(i, j));
