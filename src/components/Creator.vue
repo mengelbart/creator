@@ -27,13 +27,16 @@
              xmlns="http://www.w3.org/2000/svg"
              pointer-events="none"
         >
-          <component v-if="isEditingElement"
+          <component v-if="editingElement"
                      :is="editingElement.editingComponent"
                      :element="editingElement"
-                     @click="onElementClick"
-                     @mousedown="onElementResizeStart"
+                     :dragOffset="dragOffset"
+                     :dragPosition="dragPosition"
+                     :resizePosition="resizePosition"
+                     @mousedown="onElementDrag"
                      @mouseup="onElementDrop"
-                     @rotate="rotate"
+                     @resize="onElementResizeStart"
+                     @update="updateElement"
           ></component>
         </svg>
       </div>
@@ -56,6 +59,7 @@ import { Ref } from 'vue-property-decorator';
 import RectElementEditingComponent from '@/components/RectElementEditingComponent.vue';
 import LineElementEditingComponent from '@/components/LineElementEditingComponent.vue';
 import BackgroundElementEditingComponent from '@/components/BackgroundElementEditingComponent.vue';
+import Point from '@/creator/Point';
 
 @Component({
   components: {
@@ -78,21 +82,13 @@ export default class Creator extends Vue {
 
   height = 3742;
 
-  draggingElement: AbstractElement | null = null;
-
-  dragOffsetX = 0;
-
-  dragOffsetY = 0;
-
-  isEditingElement = false;
-
   editingElement: AbstractElement | null = null;
 
-  resizeDirection = '';
+  dragOffset: Point = new Point({});
 
-  resizeOffsetX = 0;
+  dragPosition: Point = new Point({});
 
-  resizeOffsetY = 0;
+  resizePosition: Point = new Point({});
 
   elements: AbstractElement[] = [
     new BackgroundElement({
@@ -145,148 +141,54 @@ export default class Creator extends Vue {
     return `position: relative; margin: 20px; width: ${this.width * this.zoom}px; height: ${this.height * this.zoom}px;`;
   }
 
-  rotate(event: Event, elementId: string): void {
-    const e = this.elements.find((el) => el.id === elementId);
-    if (e) {
-      e.rotate(-45);
-    }
-  }
-
   onElementClick(event: Event, elementId: string): void {
     if (elementId !== 'background') {
-      this.isEditingElement = true;
       this.editingElement = this.elements.find((e) => e.id === elementId) || null;
     } else {
-      this.isEditingElement = false;
       this.editingElement = null;
     }
   }
 
-  onElementDrag({ offsetX, offsetY }: MouseEvent, elementId: string): void {
-    this.svg.addEventListener('mousemove', this.onMouseMove);
+  waitForFirstDragMove = false;
 
-    this.draggingElement = this.elements.find((e) => e.id === elementId) || null;
-    if (this.draggingElement) {
-      this.dragOffsetX = offsetX - this.draggingElement.transform.getTranslateX();
-      this.dragOffsetY = offsetY - this.draggingElement.transform.getTranslateY();
-    }
+  onElementDrag({ offsetX, offsetY }: MouseEvent, elementId: string): void {
+    this.editingElement = this.elements.find((e) => e.id === elementId) || null;
+    this.svg.addEventListener('mousemove', this.onMouseMove);
+    this.waitForFirstDragMove = true;
   }
 
   onElementDrop(): void {
     this.svg.removeEventListener('mousemove', this.onMouseMove);
-    this.draggingElement = null;
-    this.dragOffsetX = 0;
-    this.dragOffsetY = 0;
     this.onElementResizeStop();
   }
 
   onMouseMove({ offsetX, offsetY }: MouseEvent): void {
-    if (this.draggingElement) {
-      // TODO: Use a store action to update transform
-      const deltaX = this.draggingElement.transform.getTranslateX() - (offsetX - this.dragOffsetX);
-      const deltaY = this.draggingElement.transform.getTranslateY() - (offsetY - this.dragOffsetY);
-      this.draggingElement.transform.translate(-deltaX, -deltaY);
+    if (this.waitForFirstDragMove) {
+      // If this is the first move, update the drag offset, to prevent jumping to top left X,Y
+      this.dragOffset = new Point({ x: offsetX, y: offsetY });
+      this.waitForFirstDragMove = false;
     }
+    this.dragPosition = new Point({ x: offsetX, y: offsetY });
   }
 
-  onElementResizeStart(
-    { offsetX, offsetY }: MouseEvent,
-    direction: string, elementId: string,
-  ): void {
+  onElementResizeStart({ offsetX, offsetY }: MouseEvent): void {
+    this.resizePosition = new Point({ x: offsetX, y: offsetY });
     this.svg.addEventListener('mousemove', this.onMouseResize);
-    this.resizeDirection = direction;
-    this.isEditingElement = true;
-    this.editingElement = this.elements.find((e) => e.id === elementId) || null;
-    if (this.editingElement) {
-      this.resizeOffsetX = offsetX;
-      this.resizeOffsetY = offsetY;
-    }
   }
 
   onElementResizeStop(): void {
     this.svg.removeEventListener('mousemove', this.onMouseResize);
-    this.resizeDirection = '';
-    this.resizeOffsetX = 0;
-    this.resizeOffsetY = 0;
   }
 
   onMouseResize({ offsetX, offsetY }: MouseEvent): void {
-    if (!this.editingElement) {
-      return;
+    this.resizePosition = new Point({ x: offsetX, y: offsetY });
+  }
+
+  updateElement(element: AbstractElement) {
+    const index = this.elements.findIndex((e) => e.id === element.id);
+    if (index !== -1) {
+      this.elements[index] = element;
     }
-
-    const deltaX = this.resizeOffsetX - offsetX;
-    let deltaY = this.resizeOffsetY - offsetY;
-
-    switch (this.resizeDirection) {
-      case ('n'):
-        if (this.editingElement.height + deltaY < 0) {
-          this.editingElement.rotate(180);
-          deltaY = -deltaY;
-        }
-        this.editingElement.transform.translate(0, -deltaY);
-        this.editingElement.height += deltaY;
-        break;
-
-      case ('ne'):
-        if (this.editingElement.height + deltaY < 0) {
-          this.editingElement.rotate(180);
-          deltaY = -deltaY;
-        }
-        this.editingElement.transform.translate(0, -deltaY);
-        this.editingElement.height += deltaY;
-        this.editingElement.width -= deltaX;
-        break;
-
-      case ('e'):
-        this.editingElement.width -= deltaX;
-        break;
-
-      case ('se'):
-        if (this.editingElement.height + deltaY < 0) {
-          this.editingElement.rotate(180);
-          deltaY = -deltaY;
-        }
-        this.editingElement.height -= deltaY;
-        this.editingElement.width -= deltaX;
-        break;
-
-      case ('s'):
-        if (this.editingElement.height + deltaY < 0) {
-          this.editingElement.rotate(180);
-          deltaY = -deltaY;
-        }
-        this.editingElement.height -= deltaY;
-        break;
-
-      case ('sw'):
-        if (this.editingElement.height + deltaY < 0) {
-          this.editingElement.rotate(180);
-          deltaY = -deltaY;
-        }
-        this.editingElement.transform.translate(-deltaX, 0);
-        this.editingElement.width += deltaX;
-        this.editingElement.height -= deltaY;
-        break;
-
-      case ('w'):
-        this.editingElement.transform.translate(-deltaX, 0);
-        this.editingElement.width += deltaX;
-        break;
-
-      case ('nw'):
-      default:
-        if (this.editingElement.height + deltaY < 0) {
-          this.editingElement.rotate(180);
-          deltaY = -deltaY;
-        }
-        this.editingElement.width += deltaX;
-        this.editingElement.transform.translate(-deltaX, -deltaY);
-        this.editingElement.height += deltaY;
-    }
-
-    this.resizeOffsetX = offsetX;
-    this.resizeOffsetY = offsetY;
   }
 }
 </script>
