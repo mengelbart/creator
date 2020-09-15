@@ -17,6 +17,20 @@ export default class RectElement extends AbstractElement {
     });
   }
 
+  getRotatePoint(): Point {
+    return this.transformPoint(new Point({
+      x: this.width / 2,
+      y: -20,
+    }));
+  }
+
+  getCenterPoint(): Point {
+    return this.transformPoint(new Point({
+      x: this.width / 2,
+      y: this.height / 2,
+    }));
+  }
+
   getResizePoint(direction: string): Point {
     switch (direction) {
       case 'n':

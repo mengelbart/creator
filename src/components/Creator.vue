@@ -33,9 +33,11 @@
                      :dragOffset="dragOffset"
                      :dragPosition="dragPosition"
                      :resizePosition="resizePosition"
+                     :rotatePosition="rotatePosition"
                      @mousedown="onElementDrag"
                      @mouseup="onElementDrop"
                      @resize="onElementResizeStart"
+                     @rotate="onElementRotateStart"
                      @update="updateElement"
           ></component>
         </svg>
@@ -89,6 +91,8 @@ export default class Creator extends Vue {
   dragPosition: Point = new Point({});
 
   resizePosition: Point = new Point({});
+
+  rotatePosition: Point = new Point({});
 
   elements: AbstractElement[] = [
     new BackgroundElement({
@@ -151,7 +155,7 @@ export default class Creator extends Vue {
 
   waitForFirstDragMove = false;
 
-  onElementDrag({ offsetX, offsetY }: MouseEvent, elementId: string): void {
+  onElementDrag(event: MouseEvent, elementId: string): void {
     this.editingElement = this.elements.find((e) => e.id === elementId) || null;
     this.svg.addEventListener('mousemove', this.onMouseMove);
     this.waitForFirstDragMove = true;
@@ -159,7 +163,8 @@ export default class Creator extends Vue {
 
   onElementDrop(): void {
     this.svg.removeEventListener('mousemove', this.onMouseMove);
-    this.onElementResizeStop();
+    this.svg.removeEventListener('mousemove', this.onMouseResize);
+    this.svg.removeEventListener('mousemove', this.onMouseRotate);
   }
 
   onMouseMove({ offsetX, offsetY }: MouseEvent): void {
@@ -176,12 +181,16 @@ export default class Creator extends Vue {
     this.svg.addEventListener('mousemove', this.onMouseResize);
   }
 
-  onElementResizeStop(): void {
-    this.svg.removeEventListener('mousemove', this.onMouseResize);
-  }
-
   onMouseResize({ offsetX, offsetY }: MouseEvent): void {
     this.resizePosition = new Point({ x: offsetX, y: offsetY });
+  }
+
+  onElementRotateStart(): void {
+    this.svg.addEventListener('mousemove', this.onMouseRotate);
+  }
+
+  onMouseRotate({ offsetX, offsetY }: MouseEvent): void {
+    this.rotatePosition = new Point({ x: offsetX, y: offsetY });
   }
 
   updateElement(element: AbstractElement) {

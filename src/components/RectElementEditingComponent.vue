@@ -8,6 +8,16 @@
       />
     </g>
     <g>
+      <path :d="rotatePath.path"
+            :transform="rotatePath.getRotation()"
+            fill="#1a73e8"
+            stroke="#32a852"
+            stroke-width="1"
+            stroke-opacity="1"
+            pointer-events="visiblePainted"
+            style="cursor: grab"
+            @mousedown="startRotate"
+      />
       <path v-for="(p, index) in cornerPaths"
             :key="index"
             :d="p.path"
@@ -19,7 +29,7 @@
             stroke-opacity="1"
             pointer-events="visiblePainted"
             :style="`cursor: ${p.direction}-resize`"
-            @mousedown="startResize($event, p.direction)"
+            @mousedown="startResize($event, p.canonicalDirection)"
             @mouseup="$emit('mouseup', $event, element.id)"
       />
     </g>
@@ -46,6 +56,8 @@ export default class RectElementEditingComponent extends Vue {
   @Prop(Point) dragPosition!: Point;
 
   @Prop(Point) resizePosition!: Point;
+
+  @Prop(Point) rotatePosition!: Point;
 
   dragOffsetX = 0;
 
@@ -76,6 +88,14 @@ export default class RectElementEditingComponent extends Vue {
     ].map((p) => new Resizer(p.direction, this.element.transform.getRotationDegree(), p.point));
   }
 
+  get rotatePath(): Resizer {
+    return new Resizer(
+      'r',
+      this.element.transform.getRotationDegree(),
+      this.element.getRotatePoint(),
+    );
+  }
+
   @Watch('dragOffset')
   onDragOffsetChange(val: Point) {
     this.dragOffsetX = val.x - this.element.transform.getTranslateX();
@@ -84,9 +104,12 @@ export default class RectElementEditingComponent extends Vue {
 
   @Watch('dragPosition')
   onDragPositionChange(val: Point) {
+    const rotation = this.element.transform.getRotationDegree();
+    this.element.transform.rotate(-rotation);
     const deltaX = this.element.transform.getTranslateX() - (val.x - this.dragOffsetX);
     const deltaY = this.element.transform.getTranslateY() - (val.y - this.dragOffsetY);
     this.element.transform.translate(-deltaX, -deltaY);
+    this.element.transform.rotate(rotation);
     this.$emit('update', this.element);
   }
 
@@ -98,7 +121,7 @@ export default class RectElementEditingComponent extends Vue {
   }
 
   @Watch('resizePosition')
-  onResizePositionChange(val: Point) {
+  onResizePositionChange(val: Point): void {
     const deltaX = this.resizeOffsetX - val.x;
     const deltaY = this.resizeOffsetY - val.y;
 
@@ -140,13 +163,34 @@ export default class RectElementEditingComponent extends Vue {
 
       case ('nw'):
       default:
-        this.element.width += deltaX;
         this.element.transform.translate(-deltaX, -deltaY);
+        this.element.width += deltaX;
         this.element.height += deltaY;
     }
 
     this.resizeOffsetX = val.x;
     this.resizeOffsetY = val.y;
+    this.$emit('update', this.element);
+  }
+
+  startRotate() {
+    const p = this.element.getRotatePoint();
+    this.$emit('rotate');
+  }
+
+  @Watch('rotatePosition')
+  onRotatePositionChange(val: Point): void {
+    const center = this.element.getCenterPoint();
+    const x = Math.atan2(
+      val.y - center.y,
+      val.x - center.x,
+    ) * (180 / Math.PI);
+
+    const newAngle = (x + 450) % 360;
+
+    this.element.transform.translate(this.element.width / 2, this.element.height / 2);
+    this.element.transform.rotate(-this.element.transform.getRotationDegree() + newAngle);
+    this.element.transform.translate(-this.element.width / 2, -this.element.height / 2);
     this.$emit('update', this.element);
   }
 }

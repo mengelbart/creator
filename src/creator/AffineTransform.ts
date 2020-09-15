@@ -30,8 +30,8 @@ export default class AffineTransform {
     const cos = Math.cos(theta * r);
     const sin = Math.sin(theta * r);
     this.matrix = this.matrix.multiply(new Basic2DMatrix([
-      [cos, sin, 0],
-      [-sin, cos, 0],
+      [cos, -sin, 0],
+      [sin, cos, 0],
       [0, 0, 1],
     ]));
   }
