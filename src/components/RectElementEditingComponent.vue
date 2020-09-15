@@ -17,6 +17,7 @@
             pointer-events="visiblePainted"
             style="cursor: grab"
             @mousedown="startRotate"
+            @mouseup="$emit('mouseup', $event, element.id)"
       />
       <path v-for="(p, index) in cornerPaths"
             :key="index"
@@ -46,6 +47,7 @@ import {
 import RectElement from '@/creator/RectElement';
 import Resizer from '@/creator/Resizer';
 import Point from '@/creator/Point';
+import Vector from '@/creator/matrix/Vector';
 
 @Component
 export default class RectElementEditingComponent extends Vue {
@@ -122,47 +124,69 @@ export default class RectElementEditingComponent extends Vue {
 
   @Watch('resizePosition')
   onResizePositionChange(val: Point): void {
-    const deltaX = this.resizeOffsetX - val.x;
-    const deltaY = this.resizeOffsetY - val.y;
+    const invert = this.element.transform.getInvertedMatrix();
+    if (!invert) {
+      return;
+    }
+    const resizePoint = invert.multiplyVector(new Vector([
+      val.x,
+      val.y,
+      1,
+    ]));
+
+    let deltaX;
+    let deltaY;
 
     switch (this.resizeDirection) {
       case ('n'):
+        deltaY = -resizePoint.get(1);
         this.element.transform.translate(0, -deltaY);
         this.element.height += deltaY;
         break;
 
       case ('ne'):
+        deltaX = this.element.width - resizePoint.get(0);
+        deltaY = -resizePoint.get(1);
         this.element.transform.translate(0, -deltaY);
         this.element.height += deltaY;
         this.element.width -= deltaX;
         break;
 
       case ('e'):
+        deltaX = this.element.width - resizePoint.get(0);
         this.element.width -= deltaX;
         break;
 
       case ('se'):
+        deltaX = this.element.width - resizePoint.get(0);
+        deltaY = this.element.height - resizePoint.get(1);
         this.element.height -= deltaY;
         this.element.width -= deltaX;
         break;
 
       case ('s'):
+        deltaY = this.element.height - resizePoint.get(1);
         this.element.height -= deltaY;
         break;
 
       case ('sw'):
+        deltaX = -resizePoint.get(0);
+        deltaY = this.element.height - resizePoint.get(1);
         this.element.transform.translate(-deltaX, 0);
         this.element.width += deltaX;
         this.element.height -= deltaY;
         break;
 
       case ('w'):
+        deltaX = -resizePoint.get(0);
         this.element.transform.translate(-deltaX, 0);
         this.element.width += deltaX;
         break;
 
       case ('nw'):
       default:
+        deltaX = -resizePoint.get(0);
+        deltaY = -resizePoint.get(1);
         this.element.transform.translate(-deltaX, -deltaY);
         this.element.width += deltaX;
         this.element.height += deltaY;
@@ -174,8 +198,13 @@ export default class RectElementEditingComponent extends Vue {
   }
 
   startRotate() {
-    const p = this.element.getRotatePoint();
     this.$emit('rotate');
+  }
+
+  rotateCenter(degree: number): void {
+    this.element.transform.translate(this.element.width / 2, this.element.height / 2);
+    this.element.transform.rotate(degree);
+    this.element.transform.translate(-this.element.width / 2, -this.element.height / 2);
   }
 
   @Watch('rotatePosition')
@@ -188,9 +217,7 @@ export default class RectElementEditingComponent extends Vue {
 
     const newAngle = (x + 450) % 360;
 
-    this.element.transform.translate(this.element.width / 2, this.element.height / 2);
-    this.element.transform.rotate(-this.element.transform.getRotationDegree() + newAngle);
-    this.element.transform.translate(-this.element.width / 2, -this.element.height / 2);
+    this.rotateCenter(-this.element.transform.getRotationDegree() + newAngle);
     this.$emit('update', this.element);
   }
 }

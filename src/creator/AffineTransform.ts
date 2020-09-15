@@ -52,11 +52,38 @@ export default class AffineTransform {
     return this.matrix.getCell(1, 2);
   }
 
+  setTranslateX(val: number): void {
+    this.matrix.setCell(0, 2, val);
+  }
+
+  setTranslateY(val: number): void {
+    this.matrix.setCell(1, 2, val);
+  }
+
   getRotationRad(): number {
     return Math.atan2(-this.matrix.getCell(0, 1), this.matrix.getCell(0, 0));
   }
 
   getRotationDegree(): number {
     return this.getRotationRad() * (180 / Math.PI);
+  }
+
+  getInvertedMatrix(): Matrix {
+    const aa = this.matrix.getCell(0, 0);
+    const ab = this.matrix.getCell(1, 0);
+    const ac = this.matrix.getCell(0, 1);
+    const ad = this.matrix.getCell(1, 1);
+    const atx = this.matrix.getCell(0, 2);
+    const aty = this.matrix.getCell(1, 2);
+    let det = aa * ad - ab * ac;
+    if (!det) {
+      return new Basic2DMatrix([]);
+    }
+    det = 1.0 / det;
+    return new Basic2DMatrix([
+      [ad * det, -ac * det, (ac * aty - ad * atx) * det],
+      [-ab * det, aa * det, (ab * atx - aa * aty) * det],
+      [0, 0, 1],
+    ]);
   }
 }
