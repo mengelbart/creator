@@ -18,10 +18,10 @@ export default class RectElement extends AbstractElement {
   }
 
   getRotatePoint(): Point {
-    return this.transformPoint(new Point({
+    return new Point({
       x: this.width / 2,
       y: -20,
-    }));
+    });
   }
 
   getCenterPoint(): Point {
@@ -34,53 +34,53 @@ export default class RectElement extends AbstractElement {
   getResizePoint(direction: string): Point {
     switch (direction) {
       case 'n':
-        return this.transformPoint(new Point({
+        return new Point({
           x: this.width / 2,
           y: 0,
-        }));
+        });
 
       case 'ne':
-        return this.transformPoint(new Point({
+        return new Point({
           x: this.width,
           y: 0,
-        }));
+        });
 
       case 'e':
-        return this.transformPoint(new Point({
+        return new Point({
           x: this.width,
           y: this.height / 2,
-        }));
+        });
 
       case 'se':
-        return this.transformPoint(new Point({
+        return new Point({
           x: this.width,
           y: this.height,
-        }));
+        });
 
       case 's':
-        return this.transformPoint(new Point({
+        return new Point({
           x: this.width / 2,
           y: this.height,
-        }));
+        });
 
       case 'sw':
-        return this.transformPoint(new Point({
+        return new Point({
           x: 0,
           y: this.height,
-        }));
+        });
 
       case 'w':
-        return this.transformPoint(new Point({
+        return new Point({
           x: 0,
           y: this.height / 2,
-        }));
+        });
 
       default:
       case 'nw':
-        return this.transformPoint(new Point({
+        return new Point({
           x: 0,
           y: 0,
-        }));
+        });
     }
   }
 

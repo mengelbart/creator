@@ -1,17 +1,18 @@
 import Point from '@/creator/Point';
+import AffineTransform from '@/creator/AffineTransform';
 
 export default class Resizer {
   static directions = ['n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw'];
 
   canonicalDirection: string;
 
-  rotation: number;
+  transform: AffineTransform;
 
   point: Point;
 
-  constructor(direction: string, rotation: number, p: Point) {
+  constructor(direction: string, transform: AffineTransform, p: Point) {
     this.canonicalDirection = direction;
-    this.rotation = rotation;
+    this.transform = transform;
     this.point = p;
   }
 
@@ -20,12 +21,16 @@ export default class Resizer {
             + `${this.point.x + 4} ${this.point.y + 4} ${this.point.x - 4} ${this.point.y + 4} Z`;
   }
 
+  getTransform(): string {
+    return this.transform.string;
+  }
+
   getRotation(): string {
-    return `rotate(${this.rotation},${this.point.x},${this.point.y})`;
+    return `rotate(${this.transform.getRotationDegree()},${this.point.x},${this.point.y})`;
   }
 
   get direction(): string {
-    const d = ((this.rotation % 360) + 360) % 360; // Fix negative modulo bug in js
+    const d = ((this.transform.getRotationDegree() % 360) + 360) % 360; // Fix js modulo bug
     if (d < 22.5) {
       return Resizer.directions[Resizer.directions.indexOf(this.canonicalDirection)];
     }

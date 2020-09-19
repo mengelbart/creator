@@ -36,6 +36,22 @@ export default class AffineTransform {
     ]));
   }
 
+  flipVertical(): void {
+    this.matrix = this.matrix.multiply(new Basic2DMatrix([
+      [-1, 0, 0],
+      [0, 1, 0],
+      [0, 0, 1],
+    ]));
+  }
+
+  flipHorizontal(): void {
+    this.matrix = this.matrix.multiply(new Basic2DMatrix([
+      [1, 0, 0],
+      [0, -1, 0],
+      [0, 0, 1],
+    ]));
+  }
+
   translate(dx: number, dy: number): void {
     this.matrix = this.matrix.multiply(new Basic2DMatrix([
       [1, 0, dx],
@@ -85,5 +101,9 @@ export default class AffineTransform {
       [-ab * det, aa * det, (ab * atx - aa * aty) * det],
       [0, 0, 1],
     ]);
+  }
+
+  apply(other: Matrix): void {
+    this.matrix = this.matrix.multiply(other);
   }
 }

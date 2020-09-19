@@ -9,7 +9,7 @@
     </g>
     <g>
       <path :d="rotatePath.path"
-            :transform="rotatePath.getRotation()"
+            :transform="rotatePath.getTransform()"
             fill="#1a73e8"
             stroke="#32a852"
             stroke-width="1"
@@ -22,7 +22,7 @@
       <path v-for="(p, index) in cornerPaths"
             :key="index"
             :d="p.path"
-            :transform="p.getRotation()"
+            :transform="p.getTransform()"
             fill="#1a73e8"
             fill-opacity="1"
             stroke="#32a852"
@@ -67,6 +67,8 @@ export default class RectElementEditingComponent extends Vue {
 
   resizeDirection = '';
 
+  maxResizeTranslation!: Point;
+
   resizeOffsetX = 0;
 
   resizeOffsetY = 0;
@@ -87,13 +89,13 @@ export default class RectElementEditingComponent extends Vue {
       { direction: 'sw', point: this.element.getResizePoint('sw') },
       { direction: 'w', point: this.element.getResizePoint('w') },
       { direction: 'nw', point: this.element.getResizePoint('nw') },
-    ].map((p) => new Resizer(p.direction, this.element.transform.getRotationDegree(), p.point));
+    ].map((p) => new Resizer(p.direction, this.element.transform, p.point));
   }
 
   get rotatePath(): Resizer {
     return new Resizer(
       'r',
-      this.element.transform.getRotationDegree(),
+      this.element.transform,
       this.element.getRotatePoint(),
     );
   }
@@ -117,10 +119,15 @@ export default class RectElementEditingComponent extends Vue {
 
   startResize(event: MouseEvent, direction: string) {
     this.resizeDirection = direction;
+    this.maxResizeTranslation = new Point({ x: this.element.width, y: this.element.height });
     this.resizeOffsetX = event.offsetX;
     this.resizeOffsetY = event.offsetY;
     this.$emit('resize', event);
   }
+
+  min_width = 10;
+
+  min_height = 10;
 
   @Watch('resizePosition')
   onResizePositionChange(val: Point): void {
@@ -140,6 +147,9 @@ export default class RectElementEditingComponent extends Vue {
     switch (this.resizeDirection) {
       case ('n'):
         deltaY = -resizePoint.get(1);
+        if (this.element.height + deltaY < this.min_height) {
+          deltaY = -this.element.height + this.min_height;
+        }
         this.element.transform.translate(0, -deltaY);
         this.element.height += deltaY;
         break;
@@ -147,6 +157,12 @@ export default class RectElementEditingComponent extends Vue {
       case ('ne'):
         deltaX = this.element.width - resizePoint.get(0);
         deltaY = -resizePoint.get(1);
+        if (this.element.height + deltaY < this.min_height) {
+          deltaY = -this.element.height + this.min_height;
+        }
+        if (this.element.width - deltaX < this.min_width) {
+          deltaX = this.element.width - this.min_width;
+        }
         this.element.transform.translate(0, -deltaY);
         this.element.height += deltaY;
         this.element.width -= deltaX;
@@ -154,24 +170,42 @@ export default class RectElementEditingComponent extends Vue {
 
       case ('e'):
         deltaX = this.element.width - resizePoint.get(0);
+        if (this.element.width - deltaX < this.min_width) {
+          deltaX = this.element.width - this.min_width;
+        }
         this.element.width -= deltaX;
         break;
 
       case ('se'):
         deltaX = this.element.width - resizePoint.get(0);
         deltaY = this.element.height - resizePoint.get(1);
+        if (this.element.width - deltaX < this.min_width) {
+          deltaX = this.element.width - this.min_width;
+        }
+        if (this.element.height - deltaY < this.min_height) {
+          deltaY = this.element.height - this.min_height;
+        }
         this.element.height -= deltaY;
         this.element.width -= deltaX;
         break;
 
       case ('s'):
         deltaY = this.element.height - resizePoint.get(1);
+        if (this.element.height - deltaY < this.min_height) {
+          deltaY = this.element.height - this.min_height;
+        }
         this.element.height -= deltaY;
         break;
 
       case ('sw'):
         deltaX = -resizePoint.get(0);
         deltaY = this.element.height - resizePoint.get(1);
+        if (this.element.height - deltaY < this.min_height) {
+          deltaY = this.element.height - this.min_height;
+        }
+        if (this.element.width + deltaX < this.min_width) {
+          deltaX = -this.element.width + this.min_width;
+        }
         this.element.transform.translate(-deltaX, 0);
         this.element.width += deltaX;
         this.element.height -= deltaY;
@@ -179,6 +213,9 @@ export default class RectElementEditingComponent extends Vue {
 
       case ('w'):
         deltaX = -resizePoint.get(0);
+        if (this.element.width + deltaX < this.min_width) {
+          deltaX = -this.element.width + this.min_width;
+        }
         this.element.transform.translate(-deltaX, 0);
         this.element.width += deltaX;
         break;
@@ -187,6 +224,12 @@ export default class RectElementEditingComponent extends Vue {
       default:
         deltaX = -resizePoint.get(0);
         deltaY = -resizePoint.get(1);
+        if (this.element.width + deltaX < this.min_width) {
+          deltaX = -this.element.width + this.min_width;
+        }
+        if (this.element.height + deltaY < this.min_height) {
+          deltaY = -this.element.height + this.min_height;
+        }
         this.element.transform.translate(-deltaX, -deltaY);
         this.element.width += deltaX;
         this.element.height += deltaY;
